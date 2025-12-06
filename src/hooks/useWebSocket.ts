@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import type { WebSocketMessage, TagTelemetry, BeaconsStatus, BuildingConfig, Alert } from '@/types/telemetry';
 
 const WS_URL = 'wss://niesmiertelnik.replit.app/ws';
+const MAN_DOWN_THRESHOLD_S = 30;
 
 interface WebSocketState {
   firefighters: Map<string, TagTelemetry>;
@@ -10,6 +11,28 @@ interface WebSocketState {
   alerts: Alert[];
   connected: boolean;
   lastUpdate: Date | null;
+}
+
+// Track generated local alerts to avoid duplicates
+const generatedAlertIds = new Set<string>();
+
+function generateLocalAlert(telemetry: TagTelemetry, alertType: 'man_down' | 'sos_pressed'): Alert {
+  const alertId = `LOCAL-${alertType}-${telemetry.firefighter.id}-${Date.now()}`;
+  return {
+    id: alertId,
+    type: 'alert',
+    timestamp: new Date().toISOString(),
+    alert_type: alertType,
+    severity: 'critical',
+    tag_id: telemetry.tag_id,
+    firefighter: telemetry.firefighter,
+    position: telemetry.position,
+    details: alertType === 'man_down' 
+      ? { stationary_duration_s: telemetry.vitals.stationary_duration_s }
+      : { sos_button_pressed: true },
+    resolved: false,
+    acknowledged: false,
+  };
 }
 
 export function useWebSocket() {
@@ -24,6 +47,8 @@ export function useWebSocket() {
 
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const manDownTrackerRef = useRef<Map<string, boolean>>(new Map());
+  const sosTrackerRef = useRef<Map<string, boolean>>(new Map());
 
   const connect = useCallback(() => {
     if (wsRef.current?.readyState === WebSocket.OPEN) return;
@@ -42,12 +67,51 @@ export function useWebSocket() {
         
         setState(prev => {
           const newState = { ...prev, lastUpdate: new Date() };
+          let newAlerts = [...prev.alerts];
 
           switch (data.type) {
             case 'tag_telemetry':
               const newFirefighters = new Map(prev.firefighters);
               newFirefighters.set(data.firefighter.id, data);
               newState.firefighters = newFirefighters;
+
+              // Check for MAN DOWN condition (stationary > 30s)
+              const ffId = data.firefighter.id;
+              const isStationary = data.vitals.stationary_duration_s >= MAN_DOWN_THRESHOLD_S;
+              const wasManDown = manDownTrackerRef.current.get(ffId) || false;
+              
+              if (isStationary && !wasManDown) {
+                // Trigger MAN DOWN alert
+                const manDownAlert = generateLocalAlert(data, 'man_down');
+                if (!generatedAlertIds.has(`man_down-${ffId}`)) {
+                  generatedAlertIds.add(`man_down-${ffId}`);
+                  newAlerts = [manDownAlert, ...newAlerts].slice(0, 50);
+                }
+                manDownTrackerRef.current.set(ffId, true);
+              } else if (!isStationary && wasManDown) {
+                // Reset man down state when moving again
+                manDownTrackerRef.current.set(ffId, false);
+                generatedAlertIds.delete(`man_down-${ffId}`);
+              }
+
+              // Check for SOS button pressed
+              const isSosPressed = data.device.sos_button_pressed;
+              const wasSosPressed = sosTrackerRef.current.get(ffId) || false;
+              
+              if (isSosPressed && !wasSosPressed) {
+                // Trigger SOS alert
+                const sosAlert = generateLocalAlert(data, 'sos_pressed');
+                if (!generatedAlertIds.has(`sos-${ffId}`)) {
+                  generatedAlertIds.add(`sos-${ffId}`);
+                  newAlerts = [sosAlert, ...newAlerts].slice(0, 50);
+                }
+                sosTrackerRef.current.set(ffId, true);
+              } else if (!isSosPressed && wasSosPressed) {
+                sosTrackerRef.current.set(ffId, false);
+                generatedAlertIds.delete(`sos-${ffId}`);
+              }
+
+              newState.alerts = newAlerts;
               break;
 
             case 'beacons_status':
@@ -59,14 +123,14 @@ export function useWebSocket() {
               break;
 
             case 'alert':
-              // Add new alert to the beginning of the list
+              // Add new alert from server to the beginning of the list
               const existingAlertIndex = prev.alerts.findIndex(a => a.id === data.id);
               if (existingAlertIndex >= 0) {
                 const updatedAlerts = [...prev.alerts];
                 updatedAlerts[existingAlertIndex] = data;
                 newState.alerts = updatedAlerts;
               } else {
-                newState.alerts = [data, ...prev.alerts].slice(0, 50); // Keep last 50 alerts
+                newState.alerts = [data, ...prev.alerts].slice(0, 50);
               }
               break;
           }
