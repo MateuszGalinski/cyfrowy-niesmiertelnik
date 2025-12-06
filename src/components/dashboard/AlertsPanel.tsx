@@ -125,8 +125,12 @@ function AlertItem({ alert, typeLabel, onAcknowledge, onLocate }: AlertItemProps
               <span>
                 {formatDistanceToNow(new Date(alert.timestamp), { addSuffix: true, locale: pl })}
               </span>
-              <MapPin className="w-3 h-3 ml-2" />
-              <span>Piętro {alert.position.floor}</span>
+              {alert.position && (
+                <>
+                  <MapPin className="w-3 h-3 ml-2" />
+                  <span>Piętro {alert.position.floor}</span>
+                </>
+              )}
             </div>
           </div>
         </div>
