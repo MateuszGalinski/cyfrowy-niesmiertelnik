@@ -8,7 +8,7 @@ import { pl } from "date-fns/locale";
 interface AlertsPanelProps {
   alerts: Alert[];
   onAcknowledge: (alertId: string) => void;
-  onLocateFirefighter: (firefighterId: string) => void;
+  onLocateFirefighter: (alertId: string) => void;
 }
 
 export function AlertsPanel({ alerts, onAcknowledge, onLocateFirefighter }: AlertsPanelProps) {
@@ -68,7 +68,7 @@ export function AlertsPanel({ alerts, onAcknowledge, onLocateFirefighter }: Aler
               alert={alert}
               typeLabel={alertTypeLabels[alert.alert_type] || alert.alert_type}
               onAcknowledge={() => onAcknowledge(alert.id)}
-              onLocate={() => alert.firefighter && onLocateFirefighter(alert.firefighter.id)}
+              onLocate={() => onLocateFirefighter(alert.id)}
             />
           ))
         )}

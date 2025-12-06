@@ -4,6 +4,7 @@ import { Header } from "./Header";
 import { BuildingMap } from "./BuildingMap";
 import { FirefighterList } from "./FirefighterList";
 import { FirefighterDetails } from "./FirefighterDetails";
+import { BeaconDetails } from "./BeaconDetails";
 import { AlertsPanel } from "./AlertsPanel";
 
 export function Dashboard() {
@@ -18,13 +19,40 @@ export function Dashboard() {
   } = useWebSocket();
 
   const [selectedFirefighterId, setSelectedFirefighterId] = useState<string | null>(null);
+  const [selectedBeaconId, setSelectedBeaconId] = useState<string | null>(null);
+  const [targetFloor, setTargetFloor] = useState<number | null>(null);
 
   const selectedFirefighter = selectedFirefighterId
     ? firefightersArray.find((f) => f.firefighter.id === selectedFirefighterId)
     : null;
 
+  const selectedBeacon = selectedBeaconId
+    ? beacons?.beacons.find((b) => b.id === selectedBeaconId)
+    : null;
+
   const handleLocateFirefighter = (firefighterId: string) => {
+    setSelectedBeaconId(null); // Odznacz beacon
     setSelectedFirefighterId(firefighterId);
+    
+    // Znajdź strażaka i ustaw piętro
+    const firefighter = firefightersArray.find((f) => f.firefighter.id === firefighterId);
+    if (firefighter) {
+      setTargetFloor(firefighter.position.floor);
+    }
+  };
+
+  const handleSelectFirefighter = (id: string | null) => {
+    if (id) {
+      setSelectedBeaconId(null); // Odznacz beacon gdy wybieramy strażaka
+    }
+    setSelectedFirefighterId(id);
+  };
+
+  const handleSelectBeacon = (id: string | null) => {
+    if (id) {
+      setSelectedFirefighterId(null); // Odznacz strażaka gdy wybieramy beacon
+    }
+    setSelectedBeaconId(id);
   };
 
   return (
@@ -42,7 +70,7 @@ export function Dashboard() {
           <FirefighterList
             firefighters={firefightersArray}
             selectedId={selectedFirefighterId}
-            onSelect={setSelectedFirefighterId}
+            onSelect={handleSelectFirefighter}
           />
         </div>
 
@@ -53,7 +81,11 @@ export function Dashboard() {
             beacons={beacons}
             building={building}
             selectedFirefighterId={selectedFirefighterId}
-            onSelectFirefighter={setSelectedFirefighterId}
+            onSelectFirefighter={handleSelectFirefighter}
+            selectedBeaconId={selectedBeaconId}
+            onSelectBeacon={handleSelectBeacon}
+            targetFloor={targetFloor}
+            onFloorChange={() => setTargetFloor(null)}
           />
 
           {/* Alerts at bottom */}
@@ -64,13 +96,23 @@ export function Dashboard() {
           />
         </div>
 
-        {/* Right sidebar - Details */}
+        {/* Right sidebar - Details (Firefighter or Beacon) */}
         {selectedFirefighter && (
           <div className="w-96 border-l border-border">
             <FirefighterDetails
               telemetry={selectedFirefighter}
               alerts={alerts}
               onClose={() => setSelectedFirefighterId(null)}
+            />
+          </div>
+        )}
+
+        {selectedBeacon && (
+          <div className="w-96 border-l border-border">
+            <BeaconDetails
+              beacon={selectedBeacon}
+              firefighters={firefightersArray}
+              onClose={() => setSelectedBeaconId(null)}
             />
           </div>
         )}

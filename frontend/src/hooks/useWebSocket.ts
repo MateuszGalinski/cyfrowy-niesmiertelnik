@@ -123,14 +123,30 @@ export function useWebSocket() {
               break;
 
             case 'alert':
+              // Uzupełnij dane firefighter jeśli brakuje
+              let alertToAdd = data;
+              if (!data.firefighter && data.tag_id) {
+                // Znajdź strażaka na podstawie tag_id
+                const firefighter = Array.from(prev.firefighters.values()).find(
+                  ff => ff.tag_id === data.tag_id
+                );
+                if (firefighter) {
+                  alertToAdd = {
+                    ...data,
+                    firefighter: firefighter.firefighter,
+                    position: data.position || firefighter.position
+                  };
+                }
+              }
+
               // Add new alert from server to the beginning of the list
-              const existingAlertIndex = prev.alerts.findIndex(a => a.id === data.id);
+              const existingAlertIndex = prev.alerts.findIndex(a => a.id === alertToAdd.id);
               if (existingAlertIndex >= 0) {
                 const updatedAlerts = [...prev.alerts];
-                updatedAlerts[existingAlertIndex] = data;
+                updatedAlerts[existingAlertIndex] = alertToAdd;
                 newState.alerts = updatedAlerts;
               } else {
-                newState.alerts = [data, ...prev.alerts].slice(0, 50);
+                newState.alerts = [alertToAdd, ...prev.alerts].slice(0, 50);
               }
               break;
           }

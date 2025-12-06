@@ -7,6 +7,34 @@ export interface Position {
   source: string;
   beacons_used: number;
   accuracy_m: number;
+  trilateration?: {
+    raw_position: { x: number; y: number; z: number };
+    filtered_position: { x: number; y: number; z: number };
+    residual_error_m: number;
+    gdop: number;
+    hdop: number;
+    vdop: number;
+    beacons_used: string[];
+    algorithm: string;
+    iterations: number;
+    convergence: boolean;
+  };
+  drift?: {
+    drift_x_m: number;
+    drift_y_m: number;
+    drift_z_m: number;
+    drift_total_m: number;
+    noise_sigma_m: number;
+    last_correction: number;
+  };
+  gps?: {
+    lat: number;
+    lon: number;
+    altitude_m: number;
+    accuracy_m: number;
+    satellites: number;
+    fix: boolean;
+  };
 }
 
 export interface Vitals {
@@ -82,6 +110,67 @@ export interface Firefighter {
   team: string;
 }
 
+export interface UWBMeasurement {
+  beacon_id: string;
+  beacon_name: string;
+  range_m: number;
+  rssi_dbm: number;
+  fp_power_dbm: number;
+  rx_power_dbm: number;
+  los: boolean;
+  nlos_probability: number;
+  timestamp: number;
+  quality: "excellent" | "good" | "fair" | "poor";
+}
+
+export interface IMU {
+  accel: { x: number; y: number; z: number };
+  gyro: { x: number; y: number; z: number };
+  mag: { x: number; y: number; z: number };
+  orientation: { roll: number; pitch: number; yaw: number };
+  temperature_c: number;
+}
+
+export interface PASSStatus {
+  status: string;
+  time_since_motion_s: number;
+  alarm_threshold_s: number;
+  pre_alarm_threshold_s: number;
+  sensitivity: string;
+  alarm_active: boolean;
+  alarm_acknowledged: boolean;
+}
+
+export interface Barometer {
+  pressure_pa: number;
+  altitude_rel_m: number;
+  temperature_c: number;
+  trend: string;
+  reference_pressure_pa: number;
+  estimated_floor: number;
+  floor_confidence_percent: number;
+  vertical_speed_mps: number;
+}
+
+export interface RECCO {
+  id: string;
+  type: string;
+  location: string;
+  detected: boolean;
+  last_detected: number | null;
+  signal_strength: number | null;
+  estimated_distance_m: number | null;
+  bearing_deg: number | null;
+  detector_id: string;
+}
+
+export interface BlackBox {
+  recording: boolean;
+  storage_used_percent: number;
+  records_count: number;
+  write_rate_hz: number;
+}
+
 export interface TagTelemetry {
   type: "tag_telemetry";
   timestamp: string;
@@ -89,10 +178,31 @@ export interface TagTelemetry {
   tag_id: string;
   firefighter: Firefighter;
   position: Position;
+  heading_deg?: number;
+  uwb_measurements?: UWBMeasurement[];
+  imu?: IMU;
+  pass_status?: PASSStatus;
+  barometer?: Barometer;
   vitals: Vitals;
   scba: SCBA;
+  recco?: RECCO;
+  black_box?: BlackBox;
   environment: Environment;
   device: Device;
+}
+
+export interface BeaconDetectedTag {
+  tag_id: string;
+  firefighter_id: string;
+  firefighter_name: string;
+  range_m: number;
+  rssi_dbm: number;
+  signal_quality: string;
+  los: boolean;
+  nlos_probability: number;
+  last_seen: number;
+  velocity_mps: number;
+  direction_deg: number;
 }
 
 export interface Beacon {
@@ -107,6 +217,18 @@ export interface Beacon {
   temperature_c: number;
   signal_quality: string;
   tags_in_range: string[];
+  detected_tags?: BeaconDetectedTag[];
+  uwb_tx_count?: number;
+  uwb_rx_count?: number;
+  last_ping_ms?: number;
+  error_count?: number;
+  firmware_version?: string;
+  hardware_version?: string;
+  gps?: {
+    lat: number;
+    lon: number;
+    altitude_m: number;
+  };
 }
 
 export interface BeaconsStatus {

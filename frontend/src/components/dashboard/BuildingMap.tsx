@@ -1,8 +1,8 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { FirefighterMarker } from "./FirefighterMarker";
 import { BeaconMarker } from "./BeaconMarker";
-import type { TagTelemetry, BeaconsStatus, BuildingConfig } from "@/types/telemetry";
+import type { TagTelemetry, BeaconsStatus, BuildingConfig, Beacon } from "@/types/telemetry";
 import { Layers, ZoomIn, ZoomOut, Crosshair } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -12,6 +12,10 @@ interface BuildingMapProps {
   building: BuildingConfig | null;
   selectedFirefighterId: string | null;
   onSelectFirefighter: (id: string | null) => void;
+  selectedBeaconId: string | null;
+  onSelectBeacon: (id: string | null) => void;
+  targetFloor: number | null;
+  onFloorChange: () => void;
 }
 
 export function BuildingMap({
@@ -20,10 +24,22 @@ export function BuildingMap({
   building,
   selectedFirefighterId,
   onSelectFirefighter,
+  selectedBeaconId,
+  onSelectBeacon,
+  targetFloor,
+  onFloorChange,
 }: BuildingMapProps) {
   const [currentFloor, setCurrentFloor] = useState(0);
   const [scale, setScale] = useState(12);
   const [showBeaconLabels, setShowBeaconLabels] = useState(false);
+
+  // Automatycznie zmień piętro gdy targetFloor się zmieni
+  useEffect(() => {
+    if (targetFloor !== null) {
+      setCurrentFloor(targetFloor);
+      onFloorChange(); // Zresetuj targetFloor po zmianie
+    }
+  }, [targetFloor, onFloorChange]);
 
   const floors = building?.building.floors || [
     { number: -1, name: "Piwnica", height_m: -3.0, hazard_level: "high" },
@@ -46,6 +62,21 @@ export function BuildingMap({
 
   const hazardZones = building?.building.hazard_zones.filter((hz) => hz.floor === currentFloor) || [];
   const entryPoints = building?.building.entry_points.filter((ep) => ep.floor === currentFloor) || [];
+
+  const handleMapClick = () => {
+    onSelectFirefighter(null);
+    onSelectBeacon(null);
+  };
+
+  const handleBeaconClick = (beaconId: string) => {
+    onSelectFirefighter(null); // Odznacz strażaka gdy wybieramy beacon
+    onSelectBeacon(beaconId);
+  };
+
+  const handleFirefighterClick = (firefighterId: string) => {
+    onSelectBeacon(null); // Odznacz beacon gdy wybieramy strażaka
+    onSelectFirefighter(firefighterId);
+  };
 
   return (
     <div className="glass-panel flex-1 flex flex-col overflow-hidden">
@@ -103,6 +134,7 @@ export function BuildingMap({
               size="icon"
               className="h-7 w-7"
               onClick={() => setShowBeaconLabels((s) => !s)}
+              title="Pokaż/ukryj etykiety beaconów"
             >
               <Crosshair className={cn("w-3 h-3", showBeaconLabels && "text-primary")} />
             </Button>
@@ -118,7 +150,7 @@ export function BuildingMap({
             width: dimensions.width_m * scale,
             height: dimensions.depth_m * scale,
           }}
-          onClick={() => onSelectFirefighter(null)}
+          onClick={handleMapClick}
         >
           {/* Hazard zones */}
           {hazardZones.map((zone) => (
@@ -157,6 +189,8 @@ export function BuildingMap({
               beacon={beacon}
               scale={scale}
               showLabel={showBeaconLabels}
+              selected={selectedBeaconId === beacon.id}
+              onClick={() => handleBeaconClick(beacon.id)}
             />
           ))}
 
@@ -166,7 +200,7 @@ export function BuildingMap({
               key={ff.firefighter.id}
               telemetry={ff}
               selected={selectedFirefighterId === ff.firefighter.id}
-              onClick={() => onSelectFirefighter(ff.firefighter.id)}
+              onClick={() => handleFirefighterClick(ff.firefighter.id)}
               scale={scale}
             />
           ))}
