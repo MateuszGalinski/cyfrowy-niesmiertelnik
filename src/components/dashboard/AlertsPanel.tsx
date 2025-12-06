@@ -68,7 +68,7 @@ export function AlertsPanel({ alerts, onAcknowledge, onLocateFirefighter }: Aler
               alert={alert}
               typeLabel={alertTypeLabels[alert.alert_type] || alert.alert_type}
               onAcknowledge={() => onAcknowledge(alert.id)}
-              onLocate={() => onLocateFirefighter(alert.firefighter.id)}
+              onLocate={() => alert.firefighter && onLocateFirefighter(alert.firefighter.id)}
             />
           ))
         )}
@@ -117,9 +117,11 @@ function AlertItem({ alert, typeLabel, onAcknowledge, onLocate }: AlertItemProps
                 </span>
               )}
             </div>
-            <div className="text-xs text-muted-foreground mt-0.5">
-              {alert.firefighter.name} • {alert.firefighter.role}
-            </div>
+            {alert.firefighter && (
+              <div className="text-xs text-muted-foreground mt-0.5">
+                {alert.firefighter.name} • {alert.firefighter.role}
+              </div>
+            )}
             <div className="flex items-center gap-2 mt-1 text-[10px] text-muted-foreground">
               <Clock className="w-3 h-3" />
               <span>
