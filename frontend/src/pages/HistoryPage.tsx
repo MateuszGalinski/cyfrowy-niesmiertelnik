@@ -165,6 +165,7 @@ export function HistoryPage() {
   // Set default time range (last 24 hours)
   useEffect(() => {
     const now = new Date();
+    now.setTime( now.getTime() - now.getTimezoneOffset()*60*1000 );
     const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000);
     setEndTime(formatDateTimeForInput(now));
     setStartTime(formatDateTimeForInput(yesterday));
@@ -371,6 +372,7 @@ export function HistoryPage() {
                   className="h-7 text-xs"
                   onClick={() => {
                     const now = new Date();
+                    now.setTime( now.getTime() - now.getTimezoneOffset()*60*1000 );
                     const hourAgo = new Date(now.getTime() - 60 * 60 * 1000);
                     setStartTime(formatDateTimeForInput(hourAgo));
                     setEndTime(formatDateTimeForInput(now));
@@ -384,6 +386,7 @@ export function HistoryPage() {
                   className="h-7 text-xs"
                   onClick={() => {
                     const now = new Date();
+                    now.setTime( now.getTime() - now.getTimezoneOffset()*60*1000 );
                     const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000);
                     setStartTime(formatDateTimeForInput(yesterday));
                     setEndTime(formatDateTimeForInput(now));
@@ -397,6 +400,7 @@ export function HistoryPage() {
                   className="h-7 text-xs"
                   onClick={() => {
                     const now = new Date();
+                    now.setTime( now.getTime() - now.getTimezoneOffset()*60*1000 );
                     const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
                     setStartTime(formatDateTimeForInput(weekAgo));
                     setEndTime(formatDateTimeForInput(now));
