@@ -3,7 +3,7 @@ W celu uruchomienia aplikacji należy zapoznać się z instrukcją zawartą w pl
 
 ---
 # DEMO
-[![IMAGE ALT TEXT HERE](https://img.youtube.com/vi/YOUTUBE_VIDEO_ID_HERE/0.jpg)](https://www.youtube.com/watch?v=z3ZSgeLHYiA)
+[![Link do demo na yt](https://img.youtube.com/vi/YOUTUBE_VIDEO_ID_HERE/0.jpg)](https://www.youtube.com/watch?v=z3ZSgeLHYiA)
 
 ---
 # STRUKTURA REPOZYTORIUM
