@@ -1,5 +1,6 @@
 import { cn } from "@/lib/utils";
 import { Flame, Wifi, WifiOff, Clock, Radio } from "lucide-react";
+import { NavMenu } from "../nav/NavMenu";
 
 interface HeaderProps {
   connected: boolean;
@@ -13,9 +14,7 @@ export function Header({ connected, lastUpdate, firefighterCount, beaconCount }:
     <header className="h-14 border-b border-border bg-card/50 backdrop-blur-xl flex items-center justify-between px-4">
       {/* Logo & Title */}
       <div className="flex items-center gap-3">
-        <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center shadow-lg shadow-primary/20">
-          <Flame className="w-5 h-5 text-primary-foreground" />
-        </div>
+        <NavMenu/>
         <div>
           <h1 className="text-base font-bold tracking-tight">Cyfrowy Nieśmiertelnik</h1>
           <p className="text-[10px] text-muted-foreground uppercase tracking-wider">
