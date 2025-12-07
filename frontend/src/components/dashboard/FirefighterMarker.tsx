@@ -1,77 +1,105 @@
 import { cn } from "@/lib/utils";
 import type { TagTelemetry } from "@/types/telemetry";
-import { User, AlertTriangle } from "lucide-react";
+import { User, AlertTriangle, Heart } from "lucide-react";
+import type { CSSProperties } from "react";
 
 interface FirefighterMarkerProps {
   telemetry: TagTelemetry;
   selected?: boolean;
   onClick?: () => void;
   scale?: number;
+  style?: CSSProperties; // opcjonalne nadpisanie pozycji
 }
 
-export function FirefighterMarker({ telemetry, selected, onClick, scale = 1 }: FirefighterMarkerProps) {
-  const { firefighter, vitals, device } = telemetry;
+export function FirefighterMarker({
+  telemetry,
+  selected = false,
+  onClick,
+  scale = 12,
+  style,
+}: FirefighterMarkerProps) {
+  const { firefighter, position, vitals, device } = telemetry;
 
-  const getStatus = () => {
-    if (vitals.stationary_duration_s > 30) return "critical";
-    if (vitals.heart_rate_bpm > 180 || device.battery_percent < 20) return "warning";
-    return "active";
+  // Określ status strażaka
+  const isStationary = vitals.stationary_duration_s > 20;
+  const isManDown = vitals.stationary_duration_s >= 30;
+  const isSOS = device.sos_button_pressed;
+  const isHighHR = vitals.heart_rate_bpm > 160;
+  const isLowBattery = device.battery_percent < 20;
+
+  const hasAlert = isManDown || isSOS;
+  const hasWarning = isStationary || isHighHR || isLowBattery;
+
+  // Kolor markera
+  const getMarkerColor = () => {
+    if (hasAlert) return "bg-destructive border-destructive text-destructive-foreground";
+    if (hasWarning) return "bg-warning border-warning text-warning-foreground";
+    return "bg-primary border-primary text-primary-foreground";
   };
 
-  const status = getStatus();
-
-  const statusColors = {
-    active: "border-success bg-success/20 shadow-[0_0_12px_hsl(142_76%_36%/0.4)]",
-    warning: "border-warning bg-warning/20 shadow-[0_0_12px_hsl(45_100%_51%/0.4)]",
-    critical: "border-destructive bg-destructive/20 shadow-[0_0_12px_hsl(0_72%_51%/0.5)] animate-pulse",
+  const handleClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onClick?.();
   };
 
-  // Get initials from name
-  const initials = firefighter.name
-    .split(" ")
-    .map((n) => n[0])
-    .join("")
-    .slice(0, 2);
+  // Domyślna pozycja bazowana na position, może być nadpisana przez style
+  const defaultStyle: CSSProperties = {
+    left: position.x * scale,
+    top: position.y * scale,
+  };
 
   return (
     <div
       className={cn(
-        "absolute cursor-pointer transition-all duration-300 -translate-x-1/2 -translate-y-1/2 z-10",
-        selected && "z-20"
+        "absolute -translate-x-1/2 -translate-y-1/2 z-20",
+        onClick && "cursor-pointer"
       )}
-      style={{
-        left: telemetry.position.x * scale,
-        top: telemetry.position.y * scale,
-      }}
-      onClick={(e) => {
-        e.stopPropagation();
-        onClick?.();
-      }}
+      style={{ ...defaultStyle, ...style }}
+      onClick={handleClick}
     >
+      {/* Selection ring */}
+      {selected && (
+        <div className="absolute w-12 h-12 -translate-x-1/2 -translate-y-1/2 left-1/2 top-1/2 rounded-full border-2 border-primary animate-pulse" />
+      )}
+
+      {/* Alert pulse */}
+      {hasAlert && (
+        <div className="absolute w-10 h-10 -translate-x-1/2 -translate-y-1/2 left-1/2 top-1/2 rounded-full bg-destructive/30 animate-ping" />
+      )}
+
+      {/* Main marker */}
       <div
         className={cn(
-          "firefighter-marker border-2 relative",
-          statusColors[status],
-          selected && "ring-2 ring-primary ring-offset-2 ring-offset-background scale-110"
+          "relative w-8 h-8 rounded-full border-2 flex items-center justify-center transition-all shadow-lg",
+          getMarkerColor(),
+          selected && "ring-2 ring-offset-2 ring-offset-background ring-white scale-110"
         )}
       >
-        {status === "critical" ? (
-          <AlertTriangle className="w-5 h-5 text-destructive" />
+        {hasAlert ? (
+          <AlertTriangle className="w-4 h-4" />
+        ) : isHighHR ? (
+          <Heart className="w-4 h-4" />
         ) : (
-          <span className="text-sm font-bold text-foreground">{initials}</span>
+          <User className="w-4 h-4" />
         )}
-
-        {/* Floor indicator */}
-        <div className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-secondary border border-border flex items-center justify-center">
-          <span className="text-[10px] font-mono font-bold">{telemetry.position.floor}</span>
-        </div>
       </div>
 
-      {/* Name tooltip on hover/select */}
+      {/* Name label */}
+      <div
+        className={cn(
+          "absolute top-full mt-1 left-1/2 -translate-x-1/2 whitespace-nowrap text-[10px] font-medium px-1.5 py-0.5 rounded",
+          selected
+            ? "bg-primary text-primary-foreground"
+            : "bg-background/90 text-foreground border border-border"
+        )}
+      >
+        {firefighter.name.split(" ")[0]}
+      </div>
+
+      {/* HR indicator */}
       {selected && (
-        <div className="absolute top-full mt-1 left-1/2 -translate-x-1/2 whitespace-nowrap bg-popover border border-border rounded px-2 py-1 text-xs font-medium shadow-lg">
-          {firefighter.name}
-          <span className="text-muted-foreground ml-1">({firefighter.role})</span>
+        <div className="absolute -top-2 -right-2 bg-background border border-border rounded px-1 text-[9px] font-mono">
+          {vitals.heart_rate_bpm}
         </div>
       )}
     </div>

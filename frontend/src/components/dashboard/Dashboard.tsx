@@ -31,10 +31,9 @@ export function Dashboard() {
     : null;
 
   const handleLocateFirefighter = (firefighterId: string) => {
-    setSelectedBeaconId(null); // Odznacz beacon
+    setSelectedBeaconId(null);
     setSelectedFirefighterId(firefighterId);
     
-    // Znajdź strażaka i ustaw piętro
     const firefighter = firefightersArray.find((f) => f.firefighter.id === firefighterId);
     if (firefighter) {
       setTargetFloor(firefighter.position.floor);
@@ -43,14 +42,14 @@ export function Dashboard() {
 
   const handleSelectFirefighter = (id: string | null) => {
     if (id) {
-      setSelectedBeaconId(null); // Odznacz beacon gdy wybieramy strażaka
+      setSelectedBeaconId(null);
     }
     setSelectedFirefighterId(id);
   };
 
   const handleSelectBeacon = (id: string | null) => {
     if (id) {
-      setSelectedFirefighterId(null); // Odznacz strażaka gdy wybieramy beacon
+      setSelectedFirefighterId(null);
     }
     setSelectedBeaconId(id);
   };

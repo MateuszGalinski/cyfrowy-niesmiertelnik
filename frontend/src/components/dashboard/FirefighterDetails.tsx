@@ -142,11 +142,6 @@ export function FirefighterDetails({ telemetry, alerts, onClose }: FirefighterDe
               value={`${environment.lel_percent}%`}
               alarm={environment.lel_alarm}
             />
-            <EnvironmentItem
-              label="Temperatura"
-              value={`${environment.temperature_c}°C`}
-              alarm={environment.temperature_alarm}
-            />
           </div>
         </div>
 
